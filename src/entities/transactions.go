@@ -7,7 +7,6 @@ import (
 
 type Transaction struct {
 	gorm.Model
-	Wallet   Wallet
-	WalletId uint
-	Amount   decimal.Decimal
+	WalletID uint            `json:"transaction_id"`
+	Amount   decimal.Decimal `json:"amount"`
 }

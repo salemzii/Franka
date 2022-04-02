@@ -7,8 +7,8 @@ import (
 
 type Wallet struct {
 	gorm.Model
+	UserID       uint            `json:"user_id"`
 	Balance      decimal.Decimal `json:"balance"`
 	Active       bool            `json:"active" gorm:"default:false"`
-	WalletId     string          `json:"wallet_id"`
-	Transactions []Transaction   `json:"transactions" gorm:"foreignKey:UserRefer"`
+	Transactions []Transaction
 }
