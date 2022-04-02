@@ -5,7 +5,8 @@ import "gorm.io/gorm"
 type Profile struct {
 	gorm.Model
 	PhoneNumber string `json:"phone_number"`
-	Address     string `json:"home_address`
+	Address     string `json:"home_address"`
 	State       string `json:"state"`
 	ValidIdUrl  string `json:"valididurl"`
+	ProfileId   string `json:"profile_id"`
 }
