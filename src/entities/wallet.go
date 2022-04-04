@@ -29,10 +29,9 @@ func GetWallet(c *gin.Context) {
 	})
 
 	c.JSON(200, gin.H{
-		"id":           wallet.ID,
-		"balance":      wallet.Balance,
-		"user_id":      wallet.UserID,
-		"transactions": wallet.Transactions,
+		"id":      wallet.ID,
+		"balance": wallet.Balance,
+		"user_id": wallet.UserID,
 	})
 
 }
@@ -48,7 +47,7 @@ func CreditWallet(c *gin.Context) {
 	}
 	var wallet Wallet
 	var creditAmount TransactionStruct
-	//var transaction Transaction
+	var transaction Transaction
 	c.BindJSON(&creditAmount)
 
 	db.Transaction(func(tx *gorm.DB) error {
@@ -58,16 +57,10 @@ func CreditWallet(c *gin.Context) {
 			})
 		} else {
 			if creditAmount.Amount.IsPositive() {
-				if err := tx.Where("id = ?", wallet_id).First(&wallet).Update("balance", wallet.Balance.Add(creditAmount.Amount)).Error; err != nil {
-					c.JSON(200, gin.H{
-						"error": "Error while processing transaction",
-					})
-				}
-				if err := tx.Where("id = ?", wallet_id).First(&wallet).Update("transaction", Transaction{WalletID: wallet.ID, Type: "debit", Amount: creditAmount.Amount}).Error; err != nil {
-					c.JSON(200, gin.H{
-						"error": "Error while updating transaction",
-					})
-				}
+				tx.Where("id = ?", wallet_id).First(&wallet).Update("balance", wallet.Balance.Add(creditAmount.Amount))
+				tx.Model(&transaction).Create(&Transaction{WalletID: wallet.ID, Type: "credit", Amount: creditAmount.Amount})
+				wallet.Transactions = append(wallet.Transactions, transaction)
+				tx.Save(&wallet)
 				c.JSON(200, gin.H{
 					"wallet_balance": wallet.Balance,
 				})
@@ -89,7 +82,7 @@ func DebitWallet(c *gin.Context) {
 	}
 	var wallet Wallet
 	var debitAmount TransactionStruct
-	//var transaction Transaction
+	var transaction Transaction
 	c.BindJSON(&debitAmount)
 
 	db.Transaction(func(tx *gorm.DB) error {
@@ -100,7 +93,7 @@ func DebitWallet(c *gin.Context) {
 		} else {
 			if debitAmount.Amount.GreaterThan(wallet.Balance) {
 				c.JSON(400, gin.H{
-					"error": "operation not allowed! cannot debit value greater than wallet balance",
+					"error": "operation not allowed! cannot debit " + debitAmount.Amount.String() + " greater than wallet balance",
 				})
 			} else {
 				if debitAmount.Amount.IsPositive() {
@@ -109,11 +102,7 @@ func DebitWallet(c *gin.Context) {
 							"error": "Error while processing transaction",
 						})
 					}
-					if err := tx.Where("id = ?", wallet_id).First(&wallet).Update("transaction", Transaction{WalletID: wallet.ID, Type: "debit", Amount: debitAmount.Amount}).Error; err != nil {
-						c.JSON(200, gin.H{
-							"error": "Error while updating transaction",
-						})
-					}
+					tx.Model(&transaction).Create(&Transaction{WalletID: wallet.ID, Type: "debit", Amount: debitAmount.Amount})
 					c.JSON(200, gin.H{
 						"wallet_balance": wallet.Balance,
 					})
