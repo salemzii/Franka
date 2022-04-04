@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+	auth "github.com/salemzii/franka/src/auth"
 	entity "github.com/salemzii/franka/src/entities"
 )
 
@@ -22,7 +23,13 @@ func setupServer() *gin.Engine {
 
 	//Authentication
 	router.POST("api/v1/user/register", entity.CreateUser)
-	//router.POST("/api/v1/auth/login", auth.LoginFunc)
+	router.POST("/api/v1/auth/login", auth.LoginFunc)
+
+	router.PUT("api/v1/user/:id/update", entity.UpdateUser)
+	router.GET("api/v1/user/:id", entity.GetUser)
+	router.POST("api/v1/wallet/:id/credit", entity.CreditWallet)
+	router.POST("api/v1/wallet/:id/debit", entity.DebitWallet)
+	router.GET("api/v1/wallet/:id", entity.GetWallet)
 	//router.GET("/api/v1/auth/logout", auth.Logout)
 
 	// Private group, require authentication to access any wallet resources
@@ -30,10 +37,12 @@ func setupServer() *gin.Engine {
 	// private.Use(auth.AuthRequired)
 	{
 	}
+
 	fmt.Println(private)
 
 	return router
 }
+
 func JSONMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Writer.Header().Set("Content-Type", "application/json")
