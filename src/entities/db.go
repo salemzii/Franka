@@ -20,4 +20,6 @@ func init() {
 	db.AutoMigrate(&Wallet{})
 	db.AutoMigrate(&Profile{})
 	db.AutoMigrate(&Transaction{})
+	db.AutoMigrate(&Customer{})
+	db.AutoMigrate(&DataStruct{})
 }

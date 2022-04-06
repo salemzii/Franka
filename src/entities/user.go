@@ -1,9 +1,13 @@
 package entities
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -19,8 +23,8 @@ type User struct {
 	Password string `json:"password"`
 	Profile  Profile
 	Wallet   Wallet
-
-	Active bool `json:"active"`
+	Customer Customer
+	Active   bool `json:"active"`
 }
 
 //Generates a password hash for a player's password as storing raw password to db is not ideal
@@ -67,7 +71,16 @@ func (u *User) AfterCreate(tx *gorm.DB) (err error) {
 	if err := tx.Create(&w).Error; err != nil {
 		return err
 	}
+	customer, err := CreatePaystackCustomer(u.ID, u.Username, u.Email)
+	if err != nil {
+		log.Println(err)
+	}
+
+	if err := tx.Create(customer).Error; err != nil {
+		return err
+	}
 	fmt.Println(w)
+	fmt.Println(customer.Data.Customer_code)
 	return nil
 }
 
@@ -97,6 +110,54 @@ func CreateUser(c *gin.Context) {
 		"email":    user.Email,
 		"password": user.Password,
 	})
+}
+
+func CreatePaystackCustomer(userId uint, username string, email string) (customer *Customer, err error) {
+
+	type CustomerStruct struct {
+		First_name string `json:"first_name"`
+		Last_name  string `json:"last_name"`
+		Email      string `json:"email"`
+	}
+
+	body := CustomerStruct{
+		First_name: username,
+		Last_name:  "",
+		Email:      email,
+	}
+
+	payloadBuf := new(bytes.Buffer)
+	json.NewEncoder(payloadBuf).Encode(body)
+
+	paystackUrl := "https://api.paystack.co/customer"
+	client := http.Client{}
+
+	req, err := http.NewRequest("POST", paystackUrl, payloadBuf)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	req.Header = http.Header{
+		"Content-Type":  []string{"application/json"},
+		"Authorization": []string{"BEARER sk_live_346541ab25e7ff4b0348aa1e1e06bfcd866e2ce2"},
+	}
+	res, err := client.Do(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer res.Body.Close()
+	var cusBody Customer
+	respByte, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return &cusBody, err
+	}
+	// decode byte response to our data struct
+	e := json.Unmarshal(respByte, &cusBody)
+	if e != nil {
+		log.Println(e)
+		return &cusBody, e
+	}
+	return &cusBody, nil
 }
 
 type UpdateUserStruct struct {

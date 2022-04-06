@@ -15,6 +15,7 @@ func main() {
 
 // The engine with all endpoints is now extracted from the main function
 func setupServer() *gin.Engine {
+
 	//create http router
 	router := gin.Default()
 
@@ -23,7 +24,7 @@ func setupServer() *gin.Engine {
 	router.GET("/", welcome)
 
 	//Authentication
-	router.POST("api/v1/user/register", entity.CreateUser)
+	router.POST("api/v1/auth/register", entity.CreateUser)
 	router.POST("/api/v1/auth/login", auth.LoginFunc)
 
 	router.PUT("api/v1/user/:id/update", entity.UpdateUser)
