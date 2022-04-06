@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
 	auth "github.com/salemzii/franka/src/auth"
 	entity "github.com/salemzii/franka/src/entities"
@@ -17,7 +18,7 @@ func setupServer() *gin.Engine {
 	//create http router
 	router := gin.Default()
 
-	//router.Use(sessions.Sessions("mysession", sessions.NewCookieStore(auth.Secret)))
+	router.Use(sessions.Sessions("mysession", sessions.NewCookieStore(auth.Secret)))
 	router.Use(JSONMiddleware())
 	router.GET("/", welcome)
 

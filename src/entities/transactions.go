@@ -45,7 +45,7 @@ func GetWalletTransactions(c *gin.Context) {
 		tranxList[i] = v
 	}
 	c.JSON(200, gin.H{
-		"all": tranxList,
+		"your_transactions": tranxList,
 	})
 }
 
