@@ -10,6 +10,7 @@ import (
 )
 
 func main() {
+
 	setupServer().Run()
 }
 
@@ -35,6 +36,7 @@ func setupServer() *gin.Engine {
 	router.GET("api/v1/transactions", entity.AllTransactions)
 	router.GET("api/v1/:id/transactions", entity.GetWalletTransactions)
 	router.GET("api/v1/:id/transaction/:txId", entity.GetWalletTransaction)
+	router.POST("api/v1/:id/kyc", entity.AddKyc)
 	//router.GET("/api/v1/auth/logout", auth.Logout)
 
 	// Private group, require authentication to access any wallet resources

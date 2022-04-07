@@ -1,0 +1,24 @@
+{
+  "event":"customer.success",
+    "data": {
+    "customer_id": "9387490384",
+    "customer_code": "CUS_xnxdt6s1zg1f4nx",
+    "email": "bojack@horsinaround.com",
+    "identification": {
+      "country": "NG",
+      "type": "bank_account",
+      "bvn": "200*****677",
+      "account_number": "012****789",
+      "bank_code": "007"
+    }
+  }
+}
+
+
+{
+  "phone_number":"07014327332",
+  "home_address":"kano",
+  "bank_name":"United Bank For Africa",
+  "account_number":"2051816700",
+  "bvn":"07088237", 
+}

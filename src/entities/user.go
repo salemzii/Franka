@@ -18,13 +18,13 @@ import (
 
 type User struct {
 	gorm.Model
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	Profile  Profile
-	Wallet   Wallet
-	Customer Customer
-	Active   bool `json:"active"`
+	Username      string `json:"username"`
+	Email         string `json:"email"`
+	Password      string `json:"password"`
+	Profile       Profile
+	Wallet        Wallet
+	Customer_code string `json:"customer_code"`
+	Active        bool   `json:"active"`
 }
 
 //Generates a password hash for a player's password as storing raw password to db is not ideal
@@ -41,8 +41,13 @@ func (u *User) CheckPasswordHash(password, hash string) bool {
 
 // activate user wallet
 func (u *User) ActivateWallet() (err error) {
-	if u.Profile.Address != "" && u.Profile.State != "" {
+	if u.Profile.HasAllKyc() {
 		u.Wallet.Active = true
+		u.Wallet.Limit = "general"
+		return nil
+	} else if u.Profile.HasPhaseOneKyc() {
+		u.Wallet.Active = true
+		u.Wallet.Limit = "basic"
 		return nil
 	}
 	return errors.New("can't activate wallet, atleast 2 out of  3 Kyc credentials must be provided")
@@ -71,16 +76,14 @@ func (u *User) AfterCreate(tx *gorm.DB) (err error) {
 	if err := tx.Create(&w).Error; err != nil {
 		return err
 	}
-	customer, err := CreatePaystackCustomer(u.ID, u.Username, u.Email)
+	customer_code, err := CreatePaystackCustomer(u.Username, u.Email)
 	if err != nil {
 		log.Println(err)
 	}
-
-	if err := tx.Create(customer).Error; err != nil {
-		return err
+	if err := tx.Model(&u).Update("customer_code", customer_code).Error; err != nil {
+		log.Println(err)
 	}
-	fmt.Println(w)
-	fmt.Println(customer.Data.Customer_code)
+	fmt.Println(w, customer_code)
 	return nil
 }
 
@@ -112,7 +115,7 @@ func CreateUser(c *gin.Context) {
 	})
 }
 
-func CreatePaystackCustomer(userId uint, username string, email string) (customer *Customer, err error) {
+func CreatePaystackCustomer(username string, email string) (Customer_code string, err error) {
 
 	type CustomerStruct struct {
 		First_name string `json:"first_name"`
@@ -149,15 +152,16 @@ func CreatePaystackCustomer(userId uint, username string, email string) (custome
 	var cusBody Customer
 	respByte, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return &cusBody, err
+		return cusBody.Data.Customer_code, err
 	}
 	// decode byte response to our data struct
 	e := json.Unmarshal(respByte, &cusBody)
 	if e != nil {
 		log.Println(e)
-		return &cusBody, e
+		return cusBody.Data.Customer_code, e
 	}
-	return &cusBody, nil
+	log.Println(cusBody.Data.Customer_code)
+	return cusBody.Data.Customer_code, nil
 }
 
 type UpdateUserStruct struct {
@@ -193,6 +197,7 @@ func UpdateUser(c *gin.Context) {
 }
 
 func GetUser(c *gin.Context) {
+
 	userId, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		log.Println(err)
@@ -216,5 +221,6 @@ func GetUser(c *gin.Context) {
 		"email":          user.Email,
 		"wallet_id":      wallet.ID,
 		"wallet_balance": wallet.Balance,
+		"customer_code":  user.Customer_code,
 	})
 }

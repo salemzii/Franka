@@ -14,6 +14,7 @@ type Wallet struct {
 	UserID       uint            `json:"user_id"`
 	Balance      decimal.Decimal `json:"balance"`
 	Active       bool            `json:"active" gorm:"default:false"`
+	Limit        string          `gorm:"default:null"`
 	Transactions []Transaction
 }
 
